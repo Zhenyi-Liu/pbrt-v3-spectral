@@ -76,6 +76,7 @@
 #include "lights/point.h"
 #include "lights/projection.h"
 #include "lights/spot.h"
+#include "lights/laser.h" // Added by Zhenyi
 #include "materials/disney.h"
 #include "materials/fourier.h"
 #include "materials/glass.h"
@@ -85,7 +86,7 @@
 #include "materials/metal.h"
 #include "materials/mirror.h"
 #include "materials/mixmat.h"
-#include "materials/retroreflective.h"
+#include "materials/retroreflective.h" // Added by Zhenyi
 #include "materials/plastic.h"
 #include "materials/substrate.h"
 #include "materials/subsurface.h"
@@ -754,6 +755,8 @@ std::shared_ptr<Light> MakeLight(const std::string &name,
             CreatePointLight(light2world, mediumInterface.outside, paramSet);
     else if (name == "spot")
         light = CreateSpotLight(light2world, mediumInterface.outside, paramSet);
+    else if (name == "laser")
+        light = CreateLaserLight(light2world, mediumInterface.outside, paramSet);
     else if (name == "goniometric")
         light = CreateGoniometricLight(light2world, mediumInterface.outside,
                                        paramSet);
