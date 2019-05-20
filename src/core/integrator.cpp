@@ -42,6 +42,7 @@
 #include "progressreporter.h"
 #include "camera.h"
 #include "stats.h"
+#include "lights/laser.h"
 
 namespace pbrt {
 
@@ -273,7 +274,16 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 // debugging.
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
-
+                // Zhenyi
+                // How to check if 'this' is a pbrt::PathIntegrator
+                // Add light
+                //const_cast <Light&>(scene.lights[0].__ptr_)->from = Point3f(0, 0, 1);
+//                scene.lights[0].
+                auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]);
+                // Set new to and from
+                Point3f newTo = Point3f(1,2,3);
+                Point3f newFrom = Point3f(4,5,6);
+                laser->SetToFrom(newTo, newFrom);
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
