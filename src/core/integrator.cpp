@@ -282,10 +282,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]);
                 // Zheng
                 // Set new to and from IN world space.
-                Float xCenter = camera->film->fullResolution.y / (tileBounds.pMax.x + 1) * (0.5 + pixel.x);
-                Float yCenter = camera->film->fullResolution.x / (tileBounds.pMax.y + 1) * (0.5 + pixel.y);
-                Float theta = Pi * xCenter / camera->film->fullResolution.y;
-                Float phi = 2 * Pi * yCenter / camera->film->fullResolution.x;
+                Float xCenter = pixel.x + 0.5;//camera->film->fullResolution.y / (tileBounds.pMax.x + 1) * (0.5 + pixel.x);
+                Float yCenter = pixel.y + 0.5;//camera->film->fullResolution.x / (tileBounds.pMax.y + 1) * (0.5 + pixel.y);
+                Float theta = Pi * yCenter / camera->film->fullResolution.y;
+                Float phi = 2 * Pi * xCenter / camera->film->fullResolution.x;
                 Vector3f dir(std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi),
                              std::cos(theta));
                 dir = Vector3f(dir.x,dir.z,dir.y);

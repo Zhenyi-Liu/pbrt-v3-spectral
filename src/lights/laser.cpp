@@ -104,20 +104,20 @@ void LaserLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
 }
     
 void LaserLight::SetLightToWorld(Point3f newTo, Point3f newFrom) {
-    this->to = newTo;
-    this->from = newFrom;
-//
-//
-//    Vector3f dir = Normalize(to - from);
-//    Vector3f du, dv;
-//    CoordinateSystem(dir, &du, &dv);
-//    Transform dirToZ =
-//        Transform(Matrix4x4(du.x, du.y, du.z, 0., dv.x, dv.y, dv.z, 0., dir.x,
-//                            dir.y, dir.z, 0., 0, 0, 0, 1.));
-//    LaserToWorld =
-//        LightToWorld * Translate(Vector3f(from.x, from.y, from.z)) * Inverse(dirToZ);
-//
-//    pLight = LaserToWorld(Point3f(0, 0, 0));
+    to = newTo;
+    from = newFrom;
+
+
+    Vector3f dir = Normalize(to - from);
+    Vector3f du, dv;
+    CoordinateSystem(dir, &du, &dv);
+    Transform dirToZ =
+        Transform(Matrix4x4(du.x, du.y, du.z, 0., dv.x, dv.y, dv.z, 0., dir.x,
+                            dir.y, dir.z, 0., 0, 0, 0, 1.));
+    LaserToWorld =
+        LightToWorld * Translate(Vector3f(from.x, from.y, from.z)) * Inverse(dirToZ);
+
+    pLight = LaserToWorld(Point3f(0, 0, 0));
     
 }
     
