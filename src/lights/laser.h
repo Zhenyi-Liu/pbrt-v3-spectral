@@ -51,7 +51,7 @@ class LaserLight : public Light {
     // LaserLight Public Methods
     LaserLight(const Transform &LightToWorld, const MediumInterface &m,
                const Spectrum &I, Float totalWidth, Float falloffStart,
-               Point3f from, Point3f to);
+               Point3f from, Point3f to, Transform &LaserToWorld);
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
     Float Falloff(const Vector3f &w) const;
@@ -62,13 +62,15 @@ class LaserLight : public Light {
                        Float *pdfDir) const;
     void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                 Float *pdfDir) const;
-    void SetToFrom(Point3f newTo, Point3f newFrom); 
+    void SetLightToWorld(Point3f newTo, Point3f newFrom);
+
 
   private:
     // LaserLight Private Data
     Point3f from;
     Point3f to;
-    const Point3f pLight;
+    Transform LaserToWorld;
+    Point3f pLight;
     const Spectrum I;
     const Float cosTotalWidth, cosFalloffStart;
     

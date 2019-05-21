@@ -267,7 +267,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ProfilePhase pp(Prof::StartPixel);
                     tileSampler->StartPixel(pixel);
                 }
-
+                
                 // Do this check after the StartPixel() call; this keeps
                 // the usage of RNG values from (most) Samplers that use
                 // RNGs consistent, which improves reproducability /
@@ -280,10 +280,24 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 //const_cast <Light&>(scene.lights[0].__ptr_)->from = Point3f(0, 0, 1);
 //                scene.lights[0].
                 auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]);
-                // Set new to and from
-                Point3f newTo = Point3f(1,2,3);
-                Point3f newFrom = Point3f(4,5,6);
-                laser->SetToFrom(newTo, newFrom);
+                // Zheng
+                // Set new to and from IN world space.
+                Float xCenter = camera->film->fullResolution.y / (tileBounds.pMax.x + 1) * (0.5 + pixel.x);
+                Float yCenter = camera->film->fullResolution.x / (tileBounds.pMax.y + 1) * (0.5 + pixel.y);
+                Float theta = Pi * xCenter / camera->film->fullResolution.y;
+                Float phi = 2 * Pi * yCenter / camera->film->fullResolution.x;
+                Vector3f dir(std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi),
+                             std::cos(theta));
+                dir = Vector3f(dir.x,dir.z,dir.y);
+                Ray tmpRay = Ray(Point3f(0, 0, 0), dir);
+                Ray *newDir = &tmpRay;
+                *newDir = camera->CameraToWorld(*newDir);
+                
+                Point3f newFrom = newDir->o;
+                Point3f newTo = Point3f(newDir->d.x, newDir->d.y, newDir->d.z);
+                
+                laser->SetLightToWorld(newTo, newFrom);
+                
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
