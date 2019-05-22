@@ -279,9 +279,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 // Add light
                 //const_cast <Light&>(scene.lights[0].__ptr_)->from = Point3f(0, 0, 1);
 //                scene.lights[0].
-                auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]);
-                // Zheng
-                // Set new to and from IN world space.
+//                auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]);
+//                // Zheng
+//                // Set new to and from IN world space.
                 Float xCenter = pixel.x + 0.5;//camera->film->fullResolution.y / (tileBounds.pMax.x + 1) * (0.5 + pixel.x);
                 Float yCenter = pixel.y + 0.5;//camera->film->fullResolution.x / (tileBounds.pMax.y + 1) * (0.5 + pixel.y);
                 Float theta = Pi * yCenter / camera->film->fullResolution.y;
@@ -292,10 +292,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 Ray tmpRay = Ray(Point3f(0, 0, 0), dir);
                 Ray *newDir = &tmpRay;
                 *newDir = camera->CameraToWorld(*newDir);
-                
+
                 Point3f newFrom = newDir->o;
                 Point3f newTo = Point3f(newDir->d.x, newDir->d.y, newDir->d.z);
-                
+
                 laser->SetLightToWorld(newTo, newFrom);
                 
                 do {
