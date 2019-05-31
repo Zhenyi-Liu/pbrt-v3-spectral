@@ -63,9 +63,10 @@
 #include "integrators/directlighting.h"
 #include "integrators/mlt.h"
 #include "integrators/ao.h"
-#include "integrators/spectralpath.h" // Added by Trisha
 #include "integrators/path.h"
+#include "integrators/spectralpath.h" // Added by Trisha
 #include "integrators/sppm.h"
+#include "integrators/lidarpath.h" //Added by Zhenyi
 #include "integrators/volpath.h"
 #include "integrators/whitted.h"
 #include "integrators/metadata.h"
@@ -610,8 +611,9 @@ std::shared_ptr<Material> MakeMaterial(const std::string &name,
     }
 
     if ((name == "subsurface" || name == "kdsubsurface") &&
-        (renderOptions->IntegratorName != "path" &&
+        (renderOptions->IntegratorName != "lidarpath" &&
          (renderOptions->IntegratorName != "spectralpath") &&
+         (renderOptions->IntegratorName != "path") &&
          (renderOptions->IntegratorName != "volpath")))
         Warning(
             "Subsurface scattering material \"%s\" used, but \"%s\" "
@@ -1341,6 +1343,7 @@ void pbrtLightSource(const std::string &name, const ParamSet &params) {
         printf("\n");
     }
 }
+    
 
 void pbrtAreaLightSource(const std::string &name, const ParamSet &params) {
     VERIFY_WORLD("AreaLightSource");
@@ -1767,15 +1770,17 @@ Integrator *RenderOptions::MakeIntegrator() const {
     Integrator *integrator = nullptr;
     if (IntegratorName == "whitted")
         integrator = CreateWhittedIntegrator(IntegratorParams, sampler, camera);
-    else if (IntegratorName == "directlighting")
+    else if (IntegratorName == "directlighting") {
         integrator =
-            CreateDirectLightingIntegrator(IntegratorParams, sampler, camera);
-    else if (IntegratorName == "path")
-        integrator = CreatePathIntegrator(IntegratorParams, sampler, camera);
-    else if (IntegratorName == "spectralpath")
+        CreateDirectLightingIntegrator(IntegratorParams, sampler, camera);}
+    else if (IntegratorName == "path") {
+        integrator = CreatePathIntegrator(IntegratorParams, sampler, camera);}
+    else if (IntegratorName == "spectralpath") {
         integrator = CreateSpectralPathIntegrator(IntegratorParams, sampler, camera);
-    else if (IntegratorName == "volpath")
-        integrator = CreateVolPathIntegrator(IntegratorParams, sampler, camera);
+    } else if (IntegratorName == "lidarpath") {
+        integrator = CreateLidarPathIntegrator(IntegratorParams, sampler, camera);
+    } else if (IntegratorName == "volpath") {
+        integrator = CreateVolPathIntegrator(IntegratorParams, sampler, camera);}
     else if (IntegratorName == "bdpt") {
         integrator = CreateBDPTIntegrator(IntegratorParams, sampler, camera);
     } else if (IntegratorName == "mlt") {

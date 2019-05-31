@@ -30,8 +30,9 @@
 
  */
 
-// integrators/path.cpp*
-#include "integrators/path.h"
+// integrators/lidarpath.cpp*
+#include "integrators/lidarpath.h"
+#include "reflection.h"
 #include "bssrdf.h"
 #include "camera.h"
 #include "film.h"
@@ -45,8 +46,8 @@ namespace pbrt {
 STAT_PERCENT("Integrator/Zero-radiance paths", zeroRadiancePaths, totalPaths);
 STAT_INT_DISTRIBUTION("Integrator/Path length", pathLength);
 
-// PathIntegrator Method Definitions
-PathIntegrator::PathIntegrator(int maxDepth,
+// LidarPathIntegrator Method Definitions
+LidarPathIntegrator::LidarPathIntegrator(int maxDepth,
                                std::shared_ptr<const Camera> camera,
                                std::shared_ptr<Sampler> sampler,
                                const Bounds2i &pixelBounds, Float rrThreshold,
@@ -56,12 +57,12 @@ PathIntegrator::PathIntegrator(int maxDepth,
       rrThreshold(rrThreshold),
       lightSampleStrategy(lightSampleStrategy) {}
 
-void PathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
+void LidarPathIntegrator::Preprocess(const Scene &scene, Sampler &sampler) {
     lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
 }
 
-Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
+Spectrum LidarPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
                             Sampler &sampler, MemoryArena &arena,
                             int depth) const {
     ProfilePhase p(Prof::SamplerIntegratorLi);
@@ -134,6 +135,10 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         BxDFType flags;
         Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                           BSDF_ALL, &flags);
+        // Get Reflectance --zhenyi
+        Point2f samples = sampler.Get2D();
+        Spectrum refl = isect.bsdf->rho(wo, 1, &samples);
+        
         VLOG(2) << "Sampled BSDF, f = " << f << ", pdf = " << pdf;
         if (f.IsBlack() || pdf == 0.f) break;
         beta *= f * AbsDot(wi, isect.shading.n) / pdf;
@@ -177,18 +182,28 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // Possibly terminate the path with Russian roulette.
         // Factor out radiance scaling due to refraction in rrBeta.
         Spectrum rrBeta = beta * etaScale;
+        
         if (rrBeta.MaxComponentValue() < rrThreshold && bounces > 3) {
             Float q = std::max((Float).05, 1 - rrBeta.MaxComponentValue());
             if (sampler.Get1D() < q) break;
             beta /= 1 - q;
             DCHECK(!std::isinf(beta.y()));
+        
         }
+        // Construct output for lidar --zhenyi
+        L[0] = isect.p.x;
+        L[1] = isect.p.y;
+        L[2] = isect.p.z;
+        L[3] = refl[30]; // will change
+        L[4] = L[30]; // Energy at certain wavelength
+        L[5] = isect.instanceId;
+        printf("reflectance: %f; Energy: %f \n", refl[30], L[30]);
     }
     ReportValue(pathLength, bounces);
     return L;
 }
 
-PathIntegrator *CreatePathIntegrator(const ParamSet &params,
+LidarPathIntegrator *CreateLidarPathIntegrator(const ParamSet &params,
                                      std::shared_ptr<Sampler> sampler,
                                      std::shared_ptr<const Camera> camera) {
     int maxDepth = params.FindOneInt("maxdepth", 5);
@@ -209,7 +224,7 @@ PathIntegrator *CreatePathIntegrator(const ParamSet &params,
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
     std::string lightStrategy =
         params.FindOneString("lightsamplestrategy", "spatial");
-    return new PathIntegrator(maxDepth, camera, sampler, pixelBounds,
+    return new LidarPathIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
 }
 

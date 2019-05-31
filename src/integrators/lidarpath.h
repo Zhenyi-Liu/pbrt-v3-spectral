@@ -35,47 +35,42 @@
 #pragma once
 #endif
 
-#ifndef PBRT_LIGHTS_LASER_H
-#define PBRT_LIGHTS_LASER_H
+#ifndef PBRT_INTEGRATORS_LIDARPATH_H
+#define PBRT_INTEGRATORS_LIDARPATH_H
 
-// lights/laser.h*
+// integrators/path.h*
 #include "pbrt.h"
-#include "light.h"
-#include "shape.h"
+#include "integrator.h"
+#include "lightdistrib.h"
+#include "reflection.h"
 
 namespace pbrt {
 
-// laserLight Declarations
-class LaserLight : public Light {
+// LidarPathIntegrator Declarations
+class LidarPathIntegrator : public SamplerIntegrator {
   public:
-    // LaserLight Public Methods
-    LaserLight(Transform &LightToWorld, const MediumInterface &m,
-               const Spectrum &I, Float totalWidth, Float falloffStart,
-               Transform LaserToWorld, Transform WorldToLaser);
-    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
-                       Float *pdf, VisibilityTester *vis) const;
-    Float Falloff(const Vector3f &w) const;
-    Spectrum Power() const;
-    Float Pdf_Li(const Interaction &, const Vector3f &) const;
-    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
-                       Ray *ray, Normal3f *nLight, Float *pdfPos,
-                       Float *pdfDir) const;
-    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
-                Float *pdfDir) const;
-    void SetLaserToWorld(Point3f &newDir, Point3f &newFrom);
+    // LidarPathIntegrator Public Methods
+    LidarPathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
+                   std::shared_ptr<Sampler> sampler,
+                   const Bounds2i &pixelBounds, Float rrThreshold = 1,
+                   const std::string &lightSampleStrategy = "spatial");
+
+    void Preprocess(const Scene &scene, Sampler &sampler);
+    Spectrum Li(const RayDifferential &ray, const Scene &scene,
+                Sampler &sampler, MemoryArena &arena, int depth) const;
 
   private:
-    // LaserLight Private Data
-    Point3f pLight;
-    Transform LaserToWorld, WorldToLaser;
-    const Spectrum I;
-    const Float cosTotalWidth, cosFalloffStart;
+    // LidarPathIntegrator Private Data
+    const int maxDepth;
+    const Float rrThreshold;
+    const std::string lightSampleStrategy;
+    std::unique_ptr<LightDistribution> lightDistribution;
 };
 
-std::shared_ptr<LaserLight> CreateLaserLight(const Transform &l2w,
-                             const Medium *medium,
-                             const ParamSet &paramSet);
+LidarPathIntegrator *CreateLidarPathIntegrator(const ParamSet &params,
+                                     std::shared_ptr<Sampler> sampler,
+                                     std::shared_ptr<const Camera> camera);
 
 }  // namespace pbrt
 
-#endif  // PBRT_LIGHTS_LASER_H
+#endif  // PBRT_INTEGRATORS_LIDARPATH_H

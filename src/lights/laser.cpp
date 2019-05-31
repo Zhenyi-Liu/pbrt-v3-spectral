@@ -41,13 +41,12 @@
 namespace pbrt {
 
 // LaserLight Method Definitions
-LaserLight::LaserLight(const Transform &LightToWorld,
+LaserLight::LaserLight(Transform &LightToWorld,
                      const MediumInterface &mediumInterface, const Spectrum &I,
-                     Float totalWidth, Float falloffStart, Point3f from, Point3f to, Transform &LaserToWorld)
+                     Float totalWidth, Float falloffStart, Transform LaserToWorld,
+                       Transform WorldToLaser)
     : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
-      from(from),
-      to(to),
-      pLight(LightToWorld(Point3f(0, 0, 0))),
+      pLight(LaserToWorld(Point3f(0, 0, 0))),
       I(I),
       cosTotalWidth(std::cos(Radians(totalWidth))),
       cosFalloffStart(std::cos(Radians(falloffStart))) {}
@@ -64,7 +63,7 @@ Spectrum LaserLight::Sample_Li(const Interaction &ref, const Point2f &u,
 }
 
 Float LaserLight::Falloff(const Vector3f &w) const {
-    Vector3f wl = Normalize(WorldToLight(w));
+    Vector3f wl = Normalize(WorldToLaser(w));
     Float cosTheta = wl.z;
     if (cosTheta < cosTotalWidth) return 0;
     if (cosTheta >= cosFalloffStart) return 1;
@@ -87,7 +86,7 @@ Spectrum LaserLight::Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
                               Float *pdfDir) const {
     ProfilePhase _(Prof::LightSample);
     Vector3f w = UniformSampleCone(u1, cosTotalWidth);
-    *ray = Ray(pLight, LightToWorld(w), Infinity, time, mediumInterface.inside);
+    *ray = Ray(pLight, LaserToWorld(w), Infinity, time, mediumInterface.inside);
     *nLight = (Normal3f)ray->d;
     *pdfPos = 1;
     *pdfDir = UniformConePdf(cosTotalWidth);
@@ -98,30 +97,31 @@ void LaserLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
                        Float *pdfDir) const {
     ProfilePhase _(Prof::LightPdf);
     *pdfPos = 0;
-    *pdfDir = (CosTheta(WorldToLight(ray.d)) >= cosTotalWidth)
+    *pdfDir = (CosTheta(WorldToLaser(ray.d)) >= cosTotalWidth)
                   ? UniformConePdf(cosTotalWidth)
                   : 0;
 }
     
-void LaserLight::SetLightToWorld(Point3f newTo, Point3f newFrom) {
-    to = newTo;
-    from = newFrom;
-
-
-    Vector3f dir = Normalize(to - from);
+void LaserLight::SetLaserToWorld(Point3f &newDir, Point3f &newFrom) {
+    // for a laser, newFrom defines the origin, newDir is the dir;
+    Vector3f dir = Normalize(Vector3f(newDir));
     Vector3f du, dv;
     CoordinateSystem(dir, &du, &dv);
     Transform dirToZ =
         Transform(Matrix4x4(du.x, du.y, du.z, 0., dv.x, dv.y, dv.z, 0., dir.x,
                             dir.y, dir.z, 0., 0, 0, 0, 1.));
+    Transform currentTranform = Transform();
     LaserToWorld =
-        LightToWorld * Translate(Vector3f(from.x, from.y, from.z)) * Inverse(dirToZ);
-
+        currentTranform * Translate(Vector3f(newFrom.x, newFrom.y, newFrom.z))* Inverse(dirToZ);
+    WorldToLaser = Inverse(LaserToWorld);
     pLight = LaserToWorld(Point3f(0, 0, 0));
-    
 }
     
+//std::unique_ptr<Light> LaserLight::Clone() {
+//    return std::unique_ptr<Light>(new LaserLight(*this));
+//    }
 
+    
 std::shared_ptr<LaserLight> CreateLaserLight(const Transform &l2w,
                                            const Medium *medium,
                                            const ParamSet &paramSet) {
@@ -129,20 +129,13 @@ std::shared_ptr<LaserLight> CreateLaserLight(const Transform &l2w,
     Spectrum sc = paramSet.FindOneSpectrum("scale", Spectrum(1.0));
     Float coneangle = paramSet.FindOneFloat("coneangle", 30.);
     Float conedelta = paramSet.FindOneFloat("conedeltaangle", 0);
-    // Compute Laserlight world to light transformation
-    Point3f from = paramSet.FindOnePoint3f("from", Point3f(0, 0, 0));
-    Point3f to = paramSet.FindOnePoint3f("to", Point3f(0, 0, 1));
-//    Vector3f dir = Normalize(to - from);
-//    Vector3f du, dv;
-//    CoordinateSystem(dir, &du, &dv);
-//    Transform dirToZ =
-//        Transform(Matrix4x4(du.x, du.y, du.z, 0., dv.x, dv.y, dv.z, 0., dir.x,
-//                            dir.y, dir.z, 0., 0, 0, 0, 1.));
-//    Transform light2world =
-//        l2w * Translate(Vector3f(from.x, from.y, from.z)) * Inverse(dirToZ);
-    Transform LaserToWorld = l2w;
-    return std::make_shared<LaserLight>(l2w, medium, I * sc, coneangle,
-                                       coneangle - conedelta, from, to, LaserToWorld);
+    // Compute Laserlight world to laser transformation
+    Transform LightToWorld = l2w ;
+    Transform LaserToWorld = LightToWorld;
+    Transform WorldToLaser = Inverse(LaserToWorld);
+    return std::make_shared<LaserLight>(LightToWorld, medium, I * sc, coneangle,
+                                       coneangle - conedelta, LaserToWorld, WorldToLaser);
+
 }
 
 }  // namespace pbrt

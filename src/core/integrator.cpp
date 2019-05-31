@@ -248,7 +248,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             // Get sampler instance for tile
             int seed = tile.y * nTiles.x + tile.x;
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
-
+//            std::unique_ptr<LaserLight> tileLight = std::move(scene->LaserLight);
             // Compute sample bounds for tile
             int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
@@ -260,7 +260,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             // Get _FilmTile_ for tile
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
-
+            auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]); // Zhenyi
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
                 {
@@ -274,30 +274,25 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 // debugging.
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
-                // Zhenyi
-                // How to check if 'this' is a pbrt::PathIntegrator
-                // Add light
-                //const_cast <Light&>(scene.lights[0].__ptr_)->from = Point3f(0, 0, 1);
-//                scene.lights[0].
-//                auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]);
-//                // Zheng
-//                // Set new to and from IN world space.
-                Float xCenter = pixel.x + 0.5;//camera->film->fullResolution.y / (tileBounds.pMax.x + 1) * (0.5 + pixel.x);
-                Float yCenter = pixel.y + 0.5;//camera->film->fullResolution.x / (tileBounds.pMax.y + 1) * (0.5 + pixel.y);
-                Float theta = Pi * yCenter / camera->film->fullResolution.y;
-                Float phi = 2 * Pi * xCenter / camera->film->fullResolution.x;
-                Vector3f dir(std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi),
-                             std::cos(theta));
-                dir = Vector3f(dir.x,dir.z,dir.y);
-                Ray tmpRay = Ray(Point3f(0, 0, 0), dir);
-                Ray *newDir = &tmpRay;
-                *newDir = camera->CameraToWorld(*newDir);
-
-                Point3f newFrom = newDir->o;
-                Point3f newTo = Point3f(newDir->d.x, newDir->d.y, newDir->d.z);
-
-                laser->SetLightToWorld(newTo, newFrom);
-                
+                // Added by Zhenyi, for simulating lidar, proceed when laser light
+                // is defined in scene file.
+                //-----------------------------------------------------------------
+                if (laser!= nullptr)
+                {
+                    Float xCenter = pixel.x + 0.5;
+                    Float yCenter = pixel.y + 0.5;
+                    Float theta = Pi * yCenter / camera->film->fullResolution.y; // Elevation
+                    Float phi = 2 * Pi * xCenter / camera->film->fullResolution.x; // Azimuth
+                    Vector3f dir(std::sin(theta) * std::cos(phi), std::cos(theta),
+                                 std::sin(theta) * std::sin(phi));
+                    Ray tmpRay = Ray(Point3f(0, 0, 0), dir, Infinity);
+                    Ray *newDir = &tmpRay;
+                    *newDir = camera->CameraToWorld(*newDir);
+                    Point3f newFrom = newDir->o;
+                    Point3f newdir = Point3f(newDir->d.x, newDir->d.y, newDir->d.z);
+                    laser->SetLaserToWorld(newdir, newFrom);
+                }
+                //-----------------------------------------------------------------
                 do {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
@@ -314,7 +309,6 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
                     if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
-
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
                         LOG(ERROR) << StringPrintf(
