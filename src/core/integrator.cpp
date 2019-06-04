@@ -259,7 +259,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             LOG(INFO) << "Starting image tile " << tileBounds;
             
             // create an aggregate here
-            std::shared_ptr<Primitive> aggregateInfo = scene.aggregate;
+//            std::shared_ptr<Primitive> aggregateInfo = scene.aggregate;
 //            std::unique_ptr<Light> tileLight = light->Clone(seed);
 //            TileScene tilescene = TileScene(aggregateInfo, tileLight);
 //            TileScene tilescene = *tilescene;
