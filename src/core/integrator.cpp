@@ -33,6 +33,7 @@
 // core/integrator.cpp*
 #include "integrator.h"
 #include "scene.h"
+#include "tilescene.h"
 #include "interaction.h"
 #include "sampling.h"
 #include "parallel.h"
@@ -244,11 +245,11 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
             // Allocate _MemoryArena_ for tile
             MemoryArena arena;
-
+            
             // Get sampler instance for tile
             int seed = tile.y * nTiles.x + tile.x;
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
-//            std::unique_ptr<LaserLight> tileLight = std::move(scene->LaserLight);
+            
             // Compute sample bounds for tile
             int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);
@@ -256,8 +257,14 @@ void SamplerIntegrator::Render(const Scene &scene) {
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
             LOG(INFO) << "Starting image tile " << tileBounds;
-
+            
+            // create an aggregate here
+            std::shared_ptr<Primitive> aggregateInfo = scene.aggregate;
+//            std::unique_ptr<Light> tileLight = light->Clone(seed);
+//            TileScene tilescene = TileScene(aggregateInfo, tileLight);
+//            TileScene tilescene = *tilescene;
             // Get _FilmTile_ for tile
+            
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
             auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]); // Zhenyi
@@ -305,10 +312,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ray.ScaleDifferentials(
                         1 / std::sqrt((Float)tileSampler->samplesPerPixel));
                     ++nCameraRays;
-
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
+                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena); 
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
                         LOG(ERROR) << StringPrintf(

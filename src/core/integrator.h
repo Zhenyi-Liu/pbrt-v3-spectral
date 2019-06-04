@@ -105,6 +105,7 @@ class SamplerIntegrator : public Integrator {
     // Moved these from private to protected,
     // since the spectralPath integrator needs to access them.
     std::shared_ptr<Sampler> sampler;
+    std::shared_ptr<Light> light;
     const Bounds2i pixelBounds;
 
   private:

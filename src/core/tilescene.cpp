@@ -30,55 +30,43 @@
 
  */
 
-#if defined(_MSC_VER)
-#define NOMINMAX
-#pragma once
-#endif
 
-#ifndef PBRT_CORE_SCENE_H
-#define PBRT_CORE_SCENE_H
-
-// core/scene.h*
-#include "pbrt.h"
-#include "geometry.h"
-#include "primitive.h"
-#include "light.h"
+// core/tilescene.cpp*
+#include "tilescene.h"
+#include "stats.h"
 
 namespace pbrt {
 
-// Scene Declarations
-class Scene {
-  public:
-    // Scene Public Methods
-    Scene(std::shared_ptr<Primitive> aggregate,
-          const std::vector<std::shared_ptr<Light>> &lights)
-        : lights(lights), aggregate(aggregate) {
-        // Scene Constructor Implementation
-        worldBound = aggregate->WorldBound();
-        for (const auto &light : lights) {
-            light->Preprocess(*this);
-            if (light->flags & (int)LightFlags::Infinite)
-                infiniteLights.push_back(light);
-        }
-    }
-    const Bounds3f &WorldBound() const { return worldBound; }
-    bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
-    bool IntersectP(const Ray &ray) const;
-    bool IntersectTr(Ray ray, Sampler &sampler, SurfaceInteraction *isect,
-                     Spectrum *transmittance) const;
+STAT_COUNTER("Intersections/Regular ray intersection tests",
+             nIntersectionTests);
+STAT_COUNTER("Intersections/Shadow ray intersection tests", nShadowTests);
 
-    // Scene Public Data
-    std::vector<std::shared_ptr<Light>> lights;
-    // Store infinite light sources separately for cases where we only want
-    // to loop over them.
-    std::vector<std::shared_ptr<Light>> infiniteLights;
-    std::shared_ptr<Primitive> aggregate; // change from private to public
-  private:
-    // Scene Private Data
-    
-    Bounds3f worldBound;
-};
+// TileScene Method Definitions
+bool TileScene::Intersect(const Ray &ray, SurfaceInteraction *isect) const {
+    ++nIntersectionTests;
+    DCHECK_NE(ray.d, Vector3f(0,0,0));
+    return aggregate->Intersect(ray, isect);
+}
+
+bool TileScene::IntersectP(const Ray &ray) const {
+    ++nShadowTests;
+    DCHECK_NE(ray.d, Vector3f(0,0,0));
+    return aggregate->IntersectP(ray);
+}
+
+bool TileScene::IntersectTr(Ray ray, Sampler &sampler, SurfaceInteraction *isect,
+                        Spectrum *Tr) const {
+    *Tr = Spectrum(1.f);
+    while (true) {
+        bool hitSurface = Intersect(ray, isect);
+        // Accumulate beam transmittance for ray segment
+        if (ray.medium) *Tr *= ray.medium->Tr(ray, sampler);
+
+        // Initialize next ray segment or terminate transmittance computation
+        if (!hitSurface) return false;
+        if (isect->primitive->GetMaterial() != nullptr) return true;
+        ray = isect->SpawnRay(ray.d);
+    }
+}
 
 }  // namespace pbrt
-
-#endif  // PBRT_CORE_SCENE_H

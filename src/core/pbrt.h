@@ -94,6 +94,7 @@ namespace pbrt {
 
 // Global Forward Declarations
 class Scene;
+//class TileScene;
 class Integrator;
 class SamplerIntegrator;
 template <typename T>

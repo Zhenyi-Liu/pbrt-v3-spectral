@@ -77,7 +77,7 @@ class Light {
                                Float *pdfDir) const = 0;
     virtual void Pdf_Le(const Ray &ray, const Normal3f &nLight, Float *pdfPos,
                         Float *pdfDir) const = 0;
-
+//    virtual std::unique_ptr<Light> Clone(int seed) = 0;// Zhenyi
     // Light Public Data
     const int flags;
     const int nSamples;

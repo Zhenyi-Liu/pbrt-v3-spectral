@@ -117,9 +117,9 @@ void LaserLight::SetLaserToWorld(Point3f &newDir, Point3f &newFrom) {
     pLight = LaserToWorld(Point3f(0, 0, 0));
 }
     
-//std::unique_ptr<Light> LaserLight::Clone() {
+//std::unique_ptr<Light> LaserLight::Clone(int Seed) {
 //    return std::unique_ptr<Light>(new LaserLight(*this));
-//    }
+//}
 
     
 std::shared_ptr<LaserLight> CreateLaserLight(const Transform &l2w,

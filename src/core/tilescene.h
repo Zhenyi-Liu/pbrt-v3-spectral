@@ -35,48 +35,50 @@
 #pragma once
 #endif
 
-#ifndef PBRT_LIGHTS_LASER_H
-#define PBRT_LIGHTS_LASER_H
+#ifndef PBRT_CORE_TILESCENE_H
+#define PBRT_CORE_TILESCENE_H
 
-// lights/laser.h*
+// core/tilescene.h*
 #include "pbrt.h"
+#include "geometry.h"
+#include "primitive.h"
 #include "light.h"
-#include "shape.h"
 
 namespace pbrt {
 
-// laserLight Declarations
-class LaserLight : public Light {
+// TileScene Declarations
+class TileScene {
   public:
-    // LaserLight Public Methods
-    LaserLight(Transform &LightToWorld, const MediumInterface &m,
-               const Spectrum &I, Float totalWidth, Float falloffStart,
-               Transform LaserToWorld, Transform WorldToLaser);
-    Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
-                       Float *pdf, VisibilityTester *vis) const;
-    Float Falloff(const Vector3f &w) const;
-    Spectrum Power() const;
-    Float Pdf_Li(const Interaction &, const Vector3f &) const;
-    Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
-                       Ray *ray, Normal3f *nLight, Float *pdfPos,
-                       Float *pdfDir) const;
-    void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
-                Float *pdfDir) const;
-    void SetLaserToWorld(Point3f &newDir, Point3f &newFrom);
-//    std::unique_ptr<Light> Clone(int seed);
+    // TileScene Public Methods
+    TileScene(std::shared_ptr<Primitive> aggregate,
+          const std::vector<std::shared_ptr<Light>> &lights)
+        : lights(lights), aggregate(aggregate) {
+        // TileScene Constructor Implementation
+        worldBound = aggregate->WorldBound();
+        for (const auto &light : lights) {
+//            light->Preprocess(*this); zhenyi
+            if (light->flags & (int)LightFlags::Infinite)
+                infiniteLights.push_back(light);
+        }
+    }
+    const Bounds3f &WorldBound() const { return worldBound; }
+    bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
+    bool IntersectP(const Ray &ray) const;
+    bool IntersectTr(Ray ray, Sampler &sampler, SurfaceInteraction *isect,
+                     Spectrum *transmittance) const;
+
+    // TileScene Public Data
+    std::vector<std::shared_ptr<Light>> lights;
+    // Store infinite light sources separately for cases where we only want
+    // to loop over them.
+    std::vector<std::shared_ptr<Light>> infiniteLights;
 
   private:
-    // LaserLight Private Data
-    Point3f pLight;
-    Transform LaserToWorld, WorldToLaser;
-    const Spectrum I;
-    const Float cosTotalWidth, cosFalloffStart;
+    // TileScene Private Data
+    std::shared_ptr<Primitive> aggregate;
+    Bounds3f worldBound;
 };
-
-std::shared_ptr<LaserLight> CreateLaserLight(const Transform &l2w,
-                             const Medium *medium,
-                             const ParamSet &paramSet);
 
 }  // namespace pbrt
 
-#endif  // PBRT_LIGHTS_LASER_H
+#endif  // PBRT_CORE_TILESCENE_H

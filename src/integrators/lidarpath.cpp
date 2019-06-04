@@ -39,6 +39,7 @@
 #include "interaction.h"
 #include "paramset.h"
 #include "scene.h"
+#include "tilescene.h"
 #include "stats.h"
 
 namespace pbrt {
@@ -88,6 +89,7 @@ Spectrum LidarPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
         bool foundIntersection = scene.Intersect(ray, &isect);
+        
 
         // Possibly add emitted light at intersection
         if (bounces == 0 || specularBounce) {
@@ -197,7 +199,6 @@ Spectrum LidarPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         L[3] = refl[30]; // will change
         L[4] = L[30]; // Energy at certain wavelength
         L[5] = isect.instanceId;
-        printf("reflectance: %f; Energy: %f \n", refl[30], L[30]);
     }
     ReportValue(pathLength, bounces);
     return L;
@@ -223,7 +224,7 @@ LidarPathIntegrator *CreateLidarPathIntegrator(const ParamSet &params,
     }
     Float rrThreshold = params.FindOneFloat("rrthreshold", 1.);
     std::string lightStrategy =
-        params.FindOneString("lightsamplestrategy", "spatial");
+        params.FindOneString("lightsamplestrategy", "uniform");
     return new LidarPathIntegrator(maxDepth, camera, sampler, pixelBounds,
                               rrThreshold, lightStrategy);
 }

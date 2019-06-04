@@ -69,7 +69,6 @@ Spectrum PathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     RayDifferential ray(r);
     bool specularBounce = false;
     int bounces;
-//    printf("camera ray dir: [%f %f %f] \n", ray.d.x, ray.d.y, ray.d.z); // zhenyi
     // Added after book publication: etaScale tracks the accumulated effect
     // of radiance scaling due to rays passing through refractive
     // boundaries (see the derivation on p. 527 of the third edition). We

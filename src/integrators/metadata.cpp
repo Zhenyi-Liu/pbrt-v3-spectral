@@ -62,7 +62,8 @@ Spectrum MetadataIntegrator::Li(const RayDifferential &ray,
         // Did not hit anything. Return 0.
         return L;
     }
-    
+    printf("metadata ray direction is [%f %f %f] \n", ray.d.x, ray.d.y, ray.d.z); // zhenyi
+    printf("intersection: [%f %f %f] \n",isect.p.x, isect.p.y, isect.p.z);
     // Depending on the strategy, return a different value
     if(strategy == MetadataStrategy::depth){
         Vector3f toIntersect = isect.p - ray.o;

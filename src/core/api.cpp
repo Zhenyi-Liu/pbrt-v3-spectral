@@ -1657,7 +1657,7 @@ void pbrtWorldEnd() {
     int lastPos = filename.find_last_of(".");
     std::string newFileName;
     
-    if(st == "mesh"){
+    if((st == "mesh") || (st == "pointcloud")){
         
         newFileName = filename.substr(0, lastPos) + "_mesh.txt";
         metadataFile.open(newFileName.c_str());
@@ -1688,6 +1688,7 @@ void pbrtWorldEnd() {
     else{
         std::cout << "Warning: No metadata written out." << std::endl;
     }
+    
     
     metadataFile.close();
     

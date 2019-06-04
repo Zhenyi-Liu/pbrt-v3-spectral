@@ -231,6 +231,17 @@ void Film::WriteImage(Float splatScale) {
         
         std::unique_ptr<Float[]> spectralData(new Float[nSpectralSamples * croppedPixelBounds.Area()]);
         
+        // Choose write out number of samples based on datatype. --Zhenyi
+        int nDataSamples = 31;
+        if (datatype.compare("depth")==0 || datatype.compare("mesh")==0
+            || datatype.compare("material")==0) {
+            nDataSamples = 1;}
+        else if (datatype.compare("coordinates")==0) {
+            nDataSamples = 3;}
+        // lidar output: [x, y, z, reflectance, irradiance, instance ID]
+        else if (datatype.compare("pointcloud")==0) {
+            nDataSamples = 6;}
+
         int offset = 0;
         for (Point2i p : croppedPixelBounds) {
                 
@@ -239,13 +250,14 @@ void Film::WriteImage(Float splatScale) {
             Spectrum currSpectrum = pixel.L;
             
             //Spectrum currSpectrum = Spectrum::FromXYZ(pixel.xyz);
-                
+
+            
             // Loop through the current spectrum and put each value into spectralData
-            for(int i = 0; i < nSpectralSamples; i++){
+            for(int i = 0; i < nDataSamples; i++){
                 Float filterWeightSum = pixel.filterWeightSum;
                 Float invWt = (Float)1 / filterWeightSum;
                 currSpectrum[i] = currSpectrum[i] * invWt;
-                spectralData[offset*nSpectralSamples + i] = currSpectrum[i];
+                spectralData[offset*nDataSamples + i] = currSpectrum[i];
             }
                 
             // We're not going to weight the output data with the filter. In other words, the more rays, the higher the output value will be. We can scale to an appropriate luminance later in ISET.
@@ -256,9 +268,9 @@ void Film::WriteImage(Float splatScale) {
                 pixel.splatXYZ[2]};
             Spectrum splatSpectrum = Spectrum::FromXYZ(splatXYZ);
                 
-            for(int i = 0; i < nSpectralSamples; i++){
-                spectralData[offset*nSpectralSamples + i] += splatScale * splatSpectrum[i];
-                spectralData[offset*nSpectralSamples + i] *= scale;
+            for(int i = 0; i < nDataSamples; i++){
+                spectralData[offset*nDataSamples + i] += splatScale * splatSpectrum[i];
+                spectralData[offset*nDataSamples + i] *= scale;
             }
                 
             ++offset;
@@ -274,9 +286,8 @@ void Film::WriteImage(Float splatScale) {
         int extPos = filename.find_last_of(".");
         std::string datFilename = filename.substr(0,extPos) + ".dat"; // Filename is now going to be xxx.dat
         myfile.open(datFilename.c_str());
-            
         // Print out dimensions of the image
-        myfile << croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x << " " << croppedPixelBounds.pMax.y - croppedPixelBounds.pMin.y << " " << nSpectralSamples << "\n";
+        myfile << croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x << " " << croppedPixelBounds.pMax.y - croppedPixelBounds.pMin.y << " " << nDataSamples << "\n";
             
         // Print out focal length and field of view information
         // TODO: Is it possible for us to do this here? We don't have access to focal length in the film class...
@@ -298,13 +309,7 @@ void Film::WriteImage(Float splatScale) {
         spectralDataBin = fopen(datFilename.c_str(), "a");
             
         //Write binary image
-        // Choose write out number of samples based on datatype. --Zhenyi
-        int nDataSamples = 31;
-        if (datatype.compare("depth")==0 || datatype.compare("mesh")==0
-            || datatype.compare("material")==0) {
-            nDataSamples = 1;}
-        else if (datatype.compare("coordinates")==0) {
-            nDataSamples = 3;}
+        
         
         for (int i = 0; i < nDataSamples; i++)
         {
