@@ -278,7 +278,7 @@ std::vector<TestIntegrator> GetIntegrators() {
             std::unique_ptr<Filter> filter(new BoxFilter(Vector2f(0.5, 0.5)));
             Film *film =
                 new Film(resolution, Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                         std::move(filter), 1., inTestDir("test.exr"), 1., false);
+                         std::move(filter), 1., inTestDir("test.exr"), 1., false, "spectral");
             std::shared_ptr<Camera> camera =
                 std::make_shared<PerspectiveCamera>(
                     identity, Bounds2f(Point2f(-1, -1), Point2f(1, 1)), 0., 1.,
@@ -298,7 +298,7 @@ std::vector<TestIntegrator> GetIntegrators() {
             std::unique_ptr<Filter> filter(new BoxFilter(Vector2f(0.5, 0.5)));
             Film *film =
                 new Film(resolution, Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                         std::move(filter), 1., inTestDir("test.exr"), 1., false);
+                         std::move(filter), 1., inTestDir("test.exr"), 1., false, "spectral");
             std::shared_ptr<Camera> camera =
                 std::make_shared<OrthographicCamera>(
                     identity, Bounds2f(Point2f(-.1, -.1), Point2f(.1, .1)), 0.,
@@ -318,7 +318,7 @@ std::vector<TestIntegrator> GetIntegrators() {
             std::unique_ptr<Filter> filter(new BoxFilter(Vector2f(0.5, 0.5)));
             Film *film =
                 new Film(resolution, Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                         std::move(filter), 1., inTestDir("test.exr"), 1., false);
+                         std::move(filter), 1., inTestDir("test.exr"), 1., false, "spectral");
             std::shared_ptr<Camera> camera =
                 std::make_shared<PerspectiveCamera>(
                     identity, Bounds2f(Point2f(-1, -1), Point2f(1, 1)), 0., 1.,
@@ -337,7 +337,7 @@ std::vector<TestIntegrator> GetIntegrators() {
             std::unique_ptr<Filter> filter(new BoxFilter(Vector2f(0.5, 0.5)));
             Film *film =
                 new Film(resolution, Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                         std::move(filter), 1., inTestDir("test.exr"), 1., false);
+                         std::move(filter), 1., inTestDir("test.exr"), 1., false, "spectral");
             std::shared_ptr<Camera> camera =
                 std::make_shared<OrthographicCamera>(
                     identity, Bounds2f(Point2f(-.1, -.1), Point2f(.1, .1)), 0.,
@@ -358,7 +358,7 @@ std::vector<TestIntegrator> GetIntegrators() {
             std::unique_ptr<Filter> filter(new BoxFilter(Vector2f(0.5, 0.5)));
             Film *film =
                 new Film(resolution, Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                         std::move(filter), 1., inTestDir("test.exr"),1., false);
+                         std::move(filter), 1., inTestDir("test.exr"),1., false, "spectral");
             std::shared_ptr<Camera> camera =
                 std::make_shared<PerspectiveCamera>(
                     identity, Bounds2f(Point2f(-1, -1), Point2f(1, 1)), 0., 1.,
@@ -396,7 +396,7 @@ std::vector<TestIntegrator> GetIntegrators() {
             std::unique_ptr<Filter> filter(new BoxFilter(Vector2f(0.5, 0.5)));
             Film *film =
                 new Film(resolution, Bounds2f(Point2f(0, 0), Point2f(1, 1)),
-                         std::move(filter), 1., inTestDir("test.exr"), 1., false);
+                         std::move(filter), 1., inTestDir("test.exr"), 1., false, "spectral");
             std::shared_ptr<Camera> camera =
                 std::make_shared<PerspectiveCamera>(
                     identity, Bounds2f(Point2f(-1, -1), Point2f(1, 1)), 0., 1.,
