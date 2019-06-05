@@ -71,7 +71,6 @@ Spectrum LidarPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     RayDifferential ray(r);
     bool specularBounce = false;
     int bounces;
-//    printf("camera ray dir: [%f %f %f] \n", ray.d.x, ray.d.y, ray.d.z); // zhenyi
     // Added after book publication: etaScale tracks the accumulated effect
     // of radiance scaling due to rays passing through refractive
     // boundaries (see the derivation on p. 527 of the third edition). We
@@ -137,9 +136,18 @@ Spectrum LidarPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
         BxDFType flags;
         Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                           BSDF_ALL, &flags);
+        
         // Get Reflectance --zhenyi
         Point2f samples = sampler.Get2D();
         Spectrum refl = isect.bsdf->rho(wo, 1, &samples);
+        // Construct output for lidar --zhenyi
+        L[0] = isect.p.x;
+        L[1] = isect.p.y;
+        L[2] = isect.p.z;
+        L[3] = refl[20]; // will change
+        L[4] = L[20]; // Energy at certain wavelength
+        L[5] = isect.instanceId;
+        
         
         VLOG(2) << "Sampled BSDF, f = " << f << ", pdf = " << pdf;
         if (f.IsBlack() || pdf == 0.f) break;
@@ -192,13 +200,7 @@ Spectrum LidarPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
             DCHECK(!std::isinf(beta.y()));
         
         }
-        // Construct output for lidar --zhenyi
-        L[0] = isect.p.x;
-        L[1] = isect.p.y;
-        L[2] = isect.p.z;
-        L[3] = refl[30]; // will change
-        L[4] = L[30]; // Energy at certain wavelength
-        L[5] = isect.instanceId;
+        
     }
     ReportValue(pathLength, bounces);
     return L;

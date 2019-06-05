@@ -248,7 +248,6 @@ void Film::WriteImage(Float splatScale) {
             // Get spectrum directly
             Pixel &pixel = GetPixel(p);
             Spectrum currSpectrum = pixel.L;
-            
             //Spectrum currSpectrum = Spectrum::FromXYZ(pixel.xyz);
 
             

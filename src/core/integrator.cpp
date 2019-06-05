@@ -314,7 +314,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ++nCameraRays;
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena); 
+                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
                         LOG(ERROR) << StringPrintf(
@@ -345,7 +345,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                         rayWeight = 1.0f; // Added by MMara
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
-
+                    
                     // Free _MemoryArena_ memory from computing image sample
                     // value
                     arena.Reset();
