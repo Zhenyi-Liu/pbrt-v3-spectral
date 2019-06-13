@@ -257,17 +257,32 @@ void SamplerIntegrator::Render(const Scene &scene) {
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
             Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
             LOG(INFO) << "Starting image tile " << tileBounds;
-            
-            // create an aggregate here
-//            std::shared_ptr<Primitive> aggregateInfo = scene.aggregate;
-//            std::unique_ptr<Light> tileLight = light->Clone(seed);
-//            TileScene tilescene = TileScene(aggregateInfo, tileLight);
-//            TileScene tilescene = *tilescene;
+           
             // Get _FilmTile_ for tile
             
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
-            auto laser = std::dynamic_pointer_cast<LaserLight>(scene.lights[0]); // Zhenyi
+
+            // Zhenyi/Michael
+            std::vector<std::shared_ptr<Light>> tileLights;
+            std::shared_ptr<LaserLight> laser;
+            for (int i = 0; i < scene.lights.size(); ++i) {
+                auto oldLaser = std::dynamic_pointer_cast<LaserLight>(scene.lights[i]);
+                if (oldLaser) {
+                    if (laser) {
+                        LOG(ERROR) << StringPrintf(
+                            "Multiple Laser Lights used in scene");
+                    }
+                    laser = std::make_shared<LaserLight>(*oldLaser);
+                    // Create copy of the laser light
+                    tileLights.push_back(laser);
+                } else {
+                    tileLights.push_back(scene.lights[i]);
+                }
+            }
+            // Copy of scene with same aggregate and lights, except the laser light, which is cloned
+            pbrt::Scene tileScene(scene.aggregate, tileLights);
+            
             // Loop over pixels in tile to render them
             for (Point2i pixel : tileBounds) {
                 {
@@ -284,8 +299,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 // Added by Zhenyi, for simulating lidar, proceed when laser light
                 // is defined in scene file.
                 //-----------------------------------------------------------------
-                if (laser!= nullptr)
-                {
+                if (laser) {
                     Float xCenter = pixel.x + 0.5;
                     Float yCenter = pixel.y + 0.5;
                     Float theta = Pi * yCenter / camera->film->fullResolution.y; // Elevation
@@ -314,7 +328,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ++nCameraRays;
                     // Evaluate radiance along camera ray
                     Spectrum L(0.f);
-                    if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
+                    if (rayWeight > 0) L = Li(ray, tileScene, *tileSampler, arena);
                     // Issue warning if unexpected radiance value returned
                     if (L.HasNaNs()) {
                         LOG(ERROR) << StringPrintf(

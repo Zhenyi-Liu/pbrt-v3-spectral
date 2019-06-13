@@ -63,7 +63,6 @@ class LaserLight : public Light {
     void Pdf_Le(const Ray &, const Normal3f &, Float *pdfPos,
                 Float *pdfDir) const;
     void SetLaserToWorld(Point3f &newDir, Point3f &newFrom);
-//    std::unique_ptr<Light> Clone(int seed);
 
   private:
     // LaserLight Private Data
