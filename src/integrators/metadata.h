@@ -46,7 +46,7 @@
 namespace pbrt {
 
 // LightStrategy Declarations
-enum class MetadataStrategy { depth, material, mesh, coordinates};
+enum class MetadataStrategy { depth, material, mesh, coordinates, reflectance};
 
 // MetadataIntegrator Declarations
 class MetadataIntegrator : public SamplerIntegrator {
@@ -55,12 +55,11 @@ class MetadataIntegrator : public SamplerIntegrator {
     MetadataIntegrator(MetadataStrategy strategy,
                              std::shared_ptr<const Camera> camera,
                              std::shared_ptr<Sampler> sampler,
-                             const Bounds2i &pixelBounds)
-        : SamplerIntegrator(camera, sampler, pixelBounds),
-          strategy(strategy){}
+                       const Bounds2i &pixelBounds);
+    void Preprocess(const Scene &scene, Sampler &sampler);
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
-    void Preprocess(const Scene &scene, Sampler &sampler);
+    
     virtual bool IgnoreRayWeight() const override { return true; }
   private:
     // MetadataIntegrator Private Data

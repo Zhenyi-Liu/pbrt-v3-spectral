@@ -42,7 +42,12 @@
 #include "stats.h"
 
 namespace pbrt {
-
+MetadataIntegrator::MetadataIntegrator(MetadataStrategy strategy,
+                       std::shared_ptr<const Camera> camera,
+                       std::shared_ptr<Sampler> sampler,
+                       const Bounds2i &pixelBounds)
+    : SamplerIntegrator(camera, sampler, pixelBounds),
+    strategy(strategy){}
 // MetadataIntegrator Method Definitions
 void MetadataIntegrator::Preprocess(const Scene &scene,
                                           Sampler &sampler) {
@@ -79,7 +84,12 @@ Spectrum MetadataIntegrator::Li(const RayDifferential &ray,
         L[0] = isect.p.x;
         L[1] = isect.p.y;
         L[2] = isect.p.z;
-        
+    }else if(strategy == MetadataStrategy::reflectance){
+//        L = Spectrum(isect.instanceId);
+        isect.ComputeScatteringFunctions(ray, arena, true);
+        Vector3f wo = -ray.d, wi;
+        Point2f samples = sampler.Get2D();
+        L = isect.bsdf->rho(wo, 1, &samples);
     }else{
         // We should never get here, but just in case:
         Error("Could not recognize metadata strategy.");
@@ -102,6 +112,8 @@ MetadataIntegrator *CreateMetadataIntegrator(
         strategy = MetadataStrategy::mesh;
     else if (st == "coordinates")
         strategy = MetadataStrategy::coordinates;
+    else if (st == "reflectance")
+        strategy = MetadataStrategy::reflectance;
     else {
         Warning(
             "Strategy \"%s\" for metadata unknown. "
