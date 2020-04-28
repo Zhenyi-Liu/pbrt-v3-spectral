@@ -65,7 +65,7 @@ inline void RGBToXYZ(const Float rgb[3], Float xyz[3]) {
     xyz[2] = 0.019334f * rgb[0] + 0.119193f * rgb[1] + 0.950227f * rgb[2];
 }
 
-enum class SpectrumType { Reflectance, Illuminant, Display};
+enum class SpectrumType { Reflectance, Illuminant, Display, Chart};
 extern Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals,
                                         int n, Float l);
 extern void Blackbody(const Float *lambda, int n, Float T, Float *Le);
@@ -79,6 +79,34 @@ extern const Float lcdApple_g[nLCDSamples];
 extern const Float lcdApple_b[nLCDSamples];
 extern const Float lcdApple_lambda[nLCDSamples];
     
+//----------------eSFRChart---------------
+static const int nESFRSamples = 201;
+extern const Float eSFRSPD_p1[nESFRSamples];
+extern const Float eSFRSPD_p2[nESFRSamples];
+extern const Float eSFRSPD_p3[nESFRSamples];
+extern const Float eSFRSPD_p4[nESFRSamples];
+extern const Float eSFRSPD_p5[nESFRSamples];
+extern const Float eSFRSPD_p6[nESFRSamples];
+extern const Float eSFRSPD_p7[nESFRSamples];
+extern const Float eSFRSPD_p8[nESFRSamples];
+extern const Float eSFRSPD_p9[nESFRSamples];
+extern const Float eSFRSPD_p10[nESFRSamples];
+extern const Float eSFRSPD_p11[nESFRSamples];
+extern const Float eSFRSPD_p12[nESFRSamples];
+extern const Float eSFRSPD_p13[nESFRSamples];
+extern const Float eSFRSPD_p14[nESFRSamples];
+extern const Float eSFRSPD_p15[nESFRSamples];
+extern const Float eSFRSPD_p16[nESFRSamples];
+extern const Float eSFRSPD_p17[nESFRSamples];
+extern const Float eSFRSPD_p18[nESFRSamples];
+extern const Float eSFRSPD_p19[nESFRSamples];
+extern const Float eSFRSPD_p20[nESFRSamples];
+extern const Float eSFRSPD_bg[nESFRSamples];// background
+extern const Float eSFRSPD_bg_bd[nESFRSamples];// black dot
+extern const Float eSFRSPD_bg_sq[nESFRSamples];// square
+extern const Float eSFRSPD_lambda[nESFRSamples];
+//----------------------------------------
+
 static const int nCIESamples = 471;
 extern const Float CIE_X[nCIESamples];
 extern const Float CIE_Y[nCIESamples];
@@ -397,6 +425,36 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
             B.c[i] = AverageSpectrumSamples(lcdApple_lambda, lcdApple_b, nLCDSamples, wl0,
                                             wl1);
         }
+                // Added by Zhenyi
+        for (int i = 0; i < nSpectralSamples; ++i) {
+            Float wl0 = Lerp(Float(i) / Float(nSpectralSamples),
+                             sampledLambdaStart, sampledLambdaEnd);
+            Float wl1 = Lerp(Float(i + 1) / Float(nSpectralSamples),
+                             sampledLambdaStart, sampledLambdaEnd);
+            eSFRPatch1.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p1, nESFRSamples, wl0, wl1);
+            eSFRPatch2.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p2, nESFRSamples, wl0, wl1);
+            eSFRPatch3.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p3, nESFRSamples, wl0, wl1);
+            eSFRPatch4.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p4, nESFRSamples, wl0, wl1);
+            eSFRPatch5.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p5, nESFRSamples, wl0, wl1);
+            eSFRPatch6.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p6, nESFRSamples, wl0, wl1);
+            eSFRPatch7.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p7, nESFRSamples, wl0, wl1);
+            eSFRPatch8.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p8, nESFRSamples, wl0, wl1);
+            eSFRPatch9.c[i]  = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p9, nESFRSamples, wl0, wl1);
+            eSFRPatch10.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p10, nESFRSamples, wl0, wl1);
+            eSFRPatch11.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p11, nESFRSamples, wl0, wl1);
+            eSFRPatch12.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p12, nESFRSamples, wl0, wl1);
+            eSFRPatch13.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p13, nESFRSamples, wl0, wl1);
+            eSFRPatch14.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p14, nESFRSamples, wl0, wl1);
+            eSFRPatch15.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p15, nESFRSamples, wl0, wl1);
+            eSFRPatch16.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p16, nESFRSamples, wl0, wl1);
+            eSFRPatch17.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p17, nESFRSamples, wl0, wl1);
+            eSFRPatch18.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p18, nESFRSamples, wl0, wl1);
+            eSFRPatch19.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p19, nESFRSamples, wl0, wl1);
+            eSFRPatch20.c[i] = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_p20, nESFRSamples, wl0, wl1);
+            eSFRBG.c[i]      = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_bg, nESFRSamples, wl0, wl1);
+            eSFRBG_BD.c[i]   = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_bg_bd, nESFRSamples, wl0, wl1);
+            eSFRBG_SQ.c[i]   = AverageSpectrumSamples(eSFRSPD_lambda, eSFRSPD_bg_sq, nESFRSamples, wl0, wl1);
+        }
         
     }
     void ToXYZ(Float xyz[3]) const {
@@ -489,6 +547,11 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
     // SampledSpectrum Private Data
     static SampledSpectrum X, Y, Z;
     static SampledSpectrum R, G, B; //Added by TL
+    static SampledSpectrum eSFRPatch1, eSFRPatch2, eSFRPatch3, eSFRPatch4, eSFRPatch5;
+    static SampledSpectrum eSFRPatch6, eSFRPatch7, eSFRPatch8, eSFRPatch9, eSFRPatch10;
+    static SampledSpectrum eSFRPatch11, eSFRPatch12, eSFRPatch13, eSFRPatch14, eSFRPatch15;
+    static SampledSpectrum eSFRPatch16, eSFRPatch17, eSFRPatch18, eSFRPatch19, eSFRPatch20;
+    static SampledSpectrum eSFRBG, eSFRBG_BD, eSFRBG_SQ;
     static SampledSpectrum rgbRefl2SpectWhite, rgbRefl2SpectCyan;
     static SampledSpectrum rgbRefl2SpectMagenta, rgbRefl2SpectYellow;
     static SampledSpectrum rgbRefl2SpectRed, rgbRefl2SpectGreen;

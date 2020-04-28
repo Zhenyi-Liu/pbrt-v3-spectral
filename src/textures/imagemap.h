@@ -123,7 +123,13 @@ class ImageTexture : public Texture<Treturn> {
     static void convertOutDisp(const RGBSpectrum &from, Spectrum *to) {
         Float rgb[3];
         from.ToRGB(rgb);
-        *to = Spectrum::FromRGB(rgb,SpectrumType::Display);
+         *to = Spectrum::FromRGB(rgb,SpectrumType::Chart);
+    }
+    
+    static void convertOutChart(const RGBSpectrum &from, Spectrum *to) {
+        Float rgb[3];
+        from.ToRGB(rgb);
+        *to = Spectrum::FromRGB(rgb,SpectrumType::Chart);
     }
     
     static void convertOut(Float from, Float *to) { *to = from; }
