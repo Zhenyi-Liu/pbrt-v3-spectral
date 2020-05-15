@@ -116,10 +116,11 @@ class ImageTexture : public Texture<Treturn> {
     static void convertOut(const RGBSpectrum &from, Spectrum *to) {
         Float rgb[3];
         from.ToRGB(rgb);
-        *to = Spectrum::FromRGB(rgb);
+        *to = Spectrum::FromRGB(rgb,SpectrumType::Reflectance);
     }
     
     // Added by TL. In the future, let's give it the option to load custom SPD's.
+    // Modified by Zhenyi. Use a specified set of reflectance for esfr chart.
     static void convertOutDisp(const RGBSpectrum &from, Spectrum *to) {
         Float rgb[3];
         from.ToRGB(rgb);
