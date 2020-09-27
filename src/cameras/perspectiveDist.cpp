@@ -31,8 +31,8 @@
  */
 
 
-// cameras/perspective_dist.cpp*
-#include "cameras/perspective_dist.h"
+// cameras/perspectiveDist.cpp*
+#include "cameras/perspectiveDist.h"
 #include "paramset.h"
 #include "sampler.h"
 #include "sampling.h"
@@ -43,12 +43,12 @@ namespace pbrt {
 
 // PerspectiveDistCamera Method Definitions
 PerspectiveDistCamera::PerspectiveDistCamera(const AnimatedTransform &CameraToWorld,
-                                     const Bounds2f &screenWindow,
-                                     Float shutterOpen, Float shutterClose,
-                                     Float lensRadius, Float focalDistance,
-                                     Float fov, Film *film,
-                                     const Medium *medium)
-    : PerspectiveDistCamera(CameraToWorld, PerspectiveDist(fov, 1e-2f, 1000.f),
+                                             const Bounds2f &screenWindow,
+                                             Float shutterOpen, Float shutterClose,
+                                             Float lensRadius, Float focalDistance,
+                                             Float fov, Float kc, Film *film,
+                                             const Medium *medium)
+    : ProjectiveCamera(CameraToWorld, Perspective(fov, 1e-2f, 1000.f),
                        screenWindow, shutterOpen, shutterClose, lensRadius,
                        focalDistance, film, medium) {
     // Compute differential changes in origin for perspective camera rays
@@ -347,12 +347,13 @@ PerspectiveDistCamera *CreatePerspectiveDistCamera(const ParamSet &params,
             Error("\"screenwindow\" should have four values");
     }
     Float fov = params.FindOneFloat("fov", 90.);
+    Float fov = params.FindOnePoint3f("kc", Point3f([0.0f, 0.0f, 0.0f]));
     Float halffov = params.FindOneFloat("halffov", -1.f);
     if (halffov > 0.f)
         // hack for structure synth, which exports half of the full fov
         fov = 2.f * halffov;
     return new PerspectiveDistCamera(cam2world, screen, shutteropen, shutterclose,
-                                 lensradius, focaldistance, fov, film, medium);
+                                 lensradius, focaldistance, fov, kc, film, medium);
 }
 
 }  // namespace pbrt

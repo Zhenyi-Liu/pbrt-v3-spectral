@@ -35,10 +35,10 @@
 #pragma once
 #endif
 
-#ifndef PBRT_CAMERAS_PERSPECTIVE_DIST_H
-#define PBRT_CAMERAS_PERSPECTIVE_DIST_H
+#ifndef PBRT_CAMERAS_PERSPECTIVEDIST_H
+#define PBRT_CAMERAS_PERSPECTIVEDIST_H
 
-// cameras/perspective_dist.h*
+// cameras/perspectiveDist.h*
 #include "pbrt.h"
 #include "camera.h"
 #include "film.h"
@@ -52,7 +52,7 @@ class PerspectiveDistCamera : public ProjectiveCamera {
     PerspectiveDistCamera(const AnimatedTransform &CameraToWorld,
                       const Bounds2f &screenWindow, Float shutterOpen,
                       Float shutterClose, Float lensRadius, Float focalDistance,
-                      Float fov, Film *film, const Medium *medium);
+                      Float fov, Float kc, Film *film, const Medium *medium);
     Float GenerateRay(const CameraSample &sample, Ray *) const;
     Float GenerateRayDifferential(const CameraSample &sample,
                                   RayDifferential *ray) const;
@@ -76,4 +76,4 @@ PerspectiveDistCamera *CreatePerspectiveDistCamera(const ParamSet &params,
 
 }  // namespace pbrt
 
-#endif  // PBRT_CAMERAS_PERSPECTIVE_DIST_H
+#endif  // PBRT_CAMERAS_PERSPECTIVEDIST_H
