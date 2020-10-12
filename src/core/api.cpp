@@ -52,6 +52,7 @@
 #include "cameras/omni.h" // Added by MMara
 #include "cameras/orthographic.h"
 #include "cameras/perspective.h"
+#include "cameras/perspectiveDist.h" // Added by Zhenyi
 #include "cameras/realistic.h"
 #include "cameras/realisticEye.h" // Added by Trisha
 #include "filters/box.h"
@@ -836,6 +837,9 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
     else if (name == "omni")
         camera = CreateOmniCamera(paramSet, animatedCam2World, film,
             mediumInterface.outside);
+    else if (name == "perspectiveDist")
+        camera = CreatePerspectiveDistCamera(paramSet, animatedCam2World, film,
+                                        mediumInterface.outside);
     else
         Warning("Camera \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();

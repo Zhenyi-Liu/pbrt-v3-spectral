@@ -176,53 +176,53 @@ SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3],
     } else if(type == SpectrumType::Chart){
             // Added by Zhenyi
             // We assgin the selected rgb value with pre-defined SPDs
-            if (abs(25-rgb[0]*255)<1) {
+        if (abs(25.f-rgb[0]* 255.f)<1) {
                 r = eSFRPatch1;
-            } else if (abs(33-rgb[0]*255)<1){
+            } else if (abs(33.f-rgb[0]*255.f)<1){
                 r = eSFRPatch2;
-            } else if (abs(43-rgb[0]*255)<1){
+            } else if (abs(43.f-rgb[0]*255.f)<1){
                 r = eSFRPatch3;
-            } else if (abs(52-rgb[0]*255)<1){
+            } else if (abs(52.f-rgb[0]*255.f)<1){
                 r = eSFRPatch4;
-            } else if (abs(62-rgb[0]*255)<1){
+            } else if (abs(62.f-rgb[0]*255.f)<1){
                 r = eSFRPatch5;
-            } else if (abs(72-rgb[0]*255)<1){
+            } else if (abs(72.f-rgb[0]*255.f)<1){
                 r = eSFRPatch6;
-            } else if (abs(84-rgb[0]*255)<1){
+            } else if (abs(84.f-rgb[0]*255.f)<1){
                 r = eSFRPatch7;
-            } else if (abs(95-rgb[0]*255)<1){
+            } else if (abs(95.f-rgb[0]*255.f)<1){
                 r = eSFRPatch8;
-            } else if (abs(106-rgb[0]*255)<1){
+            } else if (abs(106.f-rgb[0]*255.f)<1){
                 r = eSFRPatch9;
-            } else if (abs(118-rgb[0]*255)<1){
+            } else if (abs(118.f-rgb[0]*255.f)<1){
                 r = eSFRPatch10;
-            } else if (abs(130-rgb[0]*255)<1){
+            } else if (abs(130.f-rgb[0]*255.f)<1){
                 r = eSFRPatch11;
-            } else if (abs(143-rgb[0]*255)<1){
+            } else if (abs(143.f-rgb[0]*255.f)<1){
                 r = eSFRPatch12;
-            } else if (abs(155-rgb[0]*255)<1){
+            } else if (abs(155.f-rgb[0]*255.f)<1){
                 r = eSFRPatch13;
-            } else if (abs(169-rgb[0]*255)<1){
+            } else if (abs(169.f-rgb[0]*255.f)<1){
                 r = eSFRPatch14;
-            } else if (abs(184-rgb[0]*255)<1){
+            } else if (abs(184.f-rgb[0]*255.f)<1){
                 r = eSFRPatch15;
-            } else if (abs(196-rgb[0]*255)<1){
+            } else if (abs(196.f-rgb[0]*255.f)<1){
                 r = eSFRPatch16;
-            } else if (abs(211-rgb[0]*255)<1){
+            } else if (abs(211.f-rgb[0]*255.f)<1){
                 r = eSFRPatch17;
-            } else if (abs(224-rgb[0]*255)<1){
+            } else if (abs(224.f-rgb[0]*255.f)<1){
                 r = eSFRPatch18;
-            } else if (abs(239-rgb[0]*255)<1){
+            } else if (abs(239.f-rgb[0]*255.f)<1){
                 r = eSFRPatch19;
-            } else if (abs(255-rgb[0]*255)<1){
+            } else if (abs(255.f-rgb[0]*255.f)<1){
                 r = eSFRPatch20;
-            } else if (abs(186-rgb[0]*255)<1){
+            } else if (abs(186.f-rgb[0]*255.f)<1){
                 //bg
                 r = eSFRBG;
-            } else if (abs(0-rgb[0]*255)<1){
+            } else if (abs(0.f-rgb[0]*255.f)<1){
                 //bg_bd
                 r = eSFRBG_BD;
-            } else if (abs(99-rgb[0]*255)<1){
+            } else if (abs(99.f-rgb[0]*255.f)<1){
                 //bg_sq
                 r = eSFRBG_SQ;
             }

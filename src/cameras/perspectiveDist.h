@@ -50,9 +50,10 @@ class PerspectiveDistCamera : public ProjectiveCamera {
   public:
     // PerspectiveDistCamera Public Methods
     PerspectiveDistCamera(const AnimatedTransform &CameraToWorld,
-                      const Bounds2f &screenWindow, Float shutterOpen,
-                      Float shutterClose, Float lensRadius, Float focalDistance,
-                      Float fov, Float kc, Film *film, const Medium *medium);
+                          const Bounds2f &screenWindow, Float shutterOpen,
+                          Float shutterClose, Float lensRadius, Float focalDistance,
+                          Float kc[],
+                          Float fov, Film *film, const Medium *medium);
     Float GenerateRay(const CameraSample &sample, Ray *) const;
     Float GenerateRayDifferential(const CameraSample &sample,
                                   RayDifferential *ray) const;
@@ -68,6 +69,7 @@ class PerspectiveDistCamera : public ProjectiveCamera {
     // PerspectiveDistCamera Private Data
     Vector3f dxCamera, dyCamera;
     Float A;
+    Float k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
 };
 
 PerspectiveDistCamera *CreatePerspectiveDistCamera(const ParamSet &params,

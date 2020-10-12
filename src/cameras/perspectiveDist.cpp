@@ -40,13 +40,14 @@
 #include "stats.h"
 
 namespace pbrt {
-
+// Added by zhenyi: Simulation of lens distortion using polynomials
 // PerspectiveDistCamera Method Definitions
 PerspectiveDistCamera::PerspectiveDistCamera(const AnimatedTransform &CameraToWorld,
                                              const Bounds2f &screenWindow,
                                              Float shutterOpen, Float shutterClose,
                                              Float lensRadius, Float focalDistance,
-                                             Float fov, Float kc, Film *film,
+                                             Float kc[],
+                                             Float fov, Film *film,
                                              const Medium *medium)
     : ProjectiveCamera(CameraToWorld, Perspective(fov, 1e-2f, 1000.f),
                        screenWindow, shutterOpen, shutterClose, lensRadius,
@@ -64,40 +65,41 @@ PerspectiveDistCamera::PerspectiveDistCamera(const AnimatedTransform &CameraToWo
     pMin /= pMin.z;
     pMax /= pMax.z;
     A = std::abs((pMax.x - pMin.x) * (pMax.y - pMin.y));
+    k0 = kc[0]; k1 = kc[1]; k2 = kc[2];
+    k3 = kc[3]; k4 = kc[4]; k5 = kc[5];
+    k6 = kc[6]; k7 = kc[7]; k8 = kc[8]; k9 = kc[9];
 }
-// return distortion factor
-Float applyDistortion(Float r_c) {
-  //  Float kc[] = {0.5960, 0.3106, 0.1182}; // tmp turn this into params
-    Float kc[] = {0.5960, 0.3106, 0.1182}; // tmp
-    Float r2 = r_c*r_c;
-    return 1 + r2*(kc[0] + r2*kc[1] + r2*r2*kc[2]);
+// return invert distortion factor
+Float applyDistortion(Float r, Float kc[]) {
+    Float r2 = r * r;
+    Float r4 = r2 * r2;
+    Float f_tmp = kc[2]*r2 + kc[1]*r +kc[0];
+    f_tmp += kc[5]*r4*r + kc[4]*r4 + kc[3]*r2*r;
+    f_tmp += kc[8]*r4*r4 + kc[7]*r4*r2*r + kc[6]*r4*r2;
+    f_tmp += kc[9]*r4*r4*r2;
+    return f_tmp/r;
 }
 
-Float applyDistortionAngle(Float theta){
-    Float kc[] = {0.3812e-4, 0.0, 0.0};
-    Float theta2 = theta*theta;
-    return theta*(kc[0]+theta2*(kc[1]+theta2*kc[2]));
-}
-// return inverse distortion factor
-Float invertDistortion(Float r_d) {
-    Float kc[] = {-0.1688, 1.1354, -0.0165};
-//    {-0.1688, 1.1354, -0.0165}; // tmp turn this into params
-    int it = 0;
-    Float r = r_d;
-    while (true) {
-        Float r2 = r*r,
-              f  = r*(1 + r2*(kc[0] + r2*kc[1] + r2*r2*kc[2])) - r_d,
-              df = 1 + r2*(3*kc[0] + 5*kc[1]*r2 + 7*kc[2]*r2*r2);
-
-        r -= f / df;
-
-        if (std::abs(f) < 1e-6 || ++it > 4)
-            break;
-    }
-//    printf( "%6.4lf \n", r_d/r );
-    return r_d/r;
+//// return inverse distortion factor
+//Float invertDistortion(Float r_d, Float kc[]) {
+//
+//    int it = 0;
+//    Float r = r_d;
+//    while (true) {
+//        Float r2 = r * r, r4 = r2 * r2;
+//        Float f_tmp = kc[2]*r2 + kc[1]*r +kc[0];
+//        f_tmp += kc[5]*r4*r + kc[4]*r4 + kc[3]*r2*r;
+//        f_tmp += kc[8]*r4*r4 + kc[7]*r4*r2*r + kc[6]*r4*r2;
+//        f_tmp += kc[9]*r4*r4*r2;
+//        Float f  = f_tmp - r_d,
+//              df = kc[1] + 2*kc[2]*r + 3*kc[3]*r2 + 4*kc[4]*r2*r + 5*kc[5]*r4 + 6*kc[6]*r4*r+ 7*kc[7]*r4*r2 + 8*kc[8]*r4*r2*r + 9*kc[9]*r4*r4;// --tmp
+//        r -= f / df;
+//
+//        if (std::abs(f) < 1e-6 || ++it > 4)
+//            break;
+//    }
 //    return r/r_d;
-}
+//}
 
 Float PerspectiveDistCamera::GenerateRay(const CameraSample &sample,
                                      Ray *ray) const {
@@ -105,24 +107,7 @@ Float PerspectiveDistCamera::GenerateRay(const CameraSample &sample,
     // Compute raster and camera sample positions
     Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
-    // Apply distortion -----tmp zhenyi
-    Float x_d = pCamera.x/pCamera.z;
-    Float y_d = pCamera.y/pCamera.z;
-    Float r_d = sqrt(x_d*x_d + y_d*y_d);
-
-    Float correction_factor = applyDistortion(r_d);
-    if (r_d == 0) {
-        correction_factor=1;
-    }
-    Vector3f dir = Normalize(Vector3f(pCamera.x*correction_factor, pCamera.y*correction_factor, pCamera.z));
-//    Float r = sqrt(pCamera.x*pCamera.x+ pCamera.y*pCamera.y + pCamera.z*pCamera.z);
-//    Float psi = atan2(pCamera.y, pCamera.x);
-//    Float theta = acos(pCamera.z/r);
-//    Float imageHieght = applyDistortionAngle(theta);
-//    Vector3f dir = Normalize(Vector3f(imageHieght*cos(psi), imageHieght*sin(psi), pCamera.z));
-    //---------------------------------
-    *ray = Ray(Point3f(0, 0, 0), dir);
-//    *ray = Ray(Point3f(0, 0, 0), Normalize(Vector3f(pCamera)));
+    *ray = Ray(Point3f(0, 0, 0), Normalize(Vector3f(pCamera)));
     //  tmp: apply distortion to ray direction here
 
     //    }
@@ -152,26 +137,21 @@ Float PerspectiveDistCamera::GenerateRayDifferential(const CameraSample &sample,
     // Compute raster and camera sample positions
     Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
-//    Vector3f dir = Normalize(Vector3f(pCamera.x, pCamera.y, pCamera.z));
     //--------------------------------------------------------------------------
-    // add distortion tmp --zhenyi
-    // test without using a params input
-    // the sampled pixel is the distorted pixel, so we need to inverse the distortion
-    // to find the correct ray direction
+    // add inverser distortion --zhenyi
+    // the sample point is considered as the distorted point, we apply polynoimals to find
+    // the original sample point
     Float x_d = pCamera.x/pCamera.z;
     Float y_d = pCamera.y/pCamera.z;
     float r_d = sqrt(x_d*x_d + y_d*y_d);
-    Float correction_factor = applyDistortion(r_d);
+    Float kc[10] = {k0, k1, k2, k3, k4, k5, k6, k7, k8, k9};
+    Float correction_factor = applyDistortion(r_d, kc);
     if (r_d == 0) {
         correction_factor=1;
     }
-//    printf( "%6.4lf \n", correction_factor );
-    Vector3f dir = Normalize(Vector3f(pCamera.x*correction_factor, pCamera.y*correction_factor, pCamera.z));
-//    Float r = sqrt(pCamera.x*pCamera.x+ pCamera.y*pCamera.y + pCamera.z*pCamera.z);
-//    Float psi = atan2(pCamera.y, pCamera.x);
-//    Float theta = acos(pCamera.z/r);
-//    Float imageHieght = applyDistortionAngle(theta);
-//    Vector3f dir = Normalize(Vector3f(theta*cos(psi), theta*sin(psi), pCamera.z));
+    pCamera.x*=correction_factor;
+    pCamera.y*=correction_factor;
+    Vector3f dir = Normalize(Vector3f(pCamera.x, pCamera.y, pCamera.z));
     //---------------------------------------------------------------------------
     Float w = ray->wavelength; // Save the wavelength information
     *ray = RayDifferential(Point3f(0, 0, 0), dir);
@@ -223,11 +203,8 @@ Spectrum PerspectiveDistCamera::We(const Ray &ray, Point2f *pRaster2) const {
     // Interpolate camera matrix and check if $\w{}$ is forward-facing
     Transform c2w;
     CameraToWorld.Interpolate(ray.time, &c2w);
-    // apply distortion --zhenyi
-//    dir = applyDistortion(<#Float r_c#>)
     Float cosTheta = Dot(ray.d, c2w(Vector3f(0, 0, 1)));
     if (cosTheta <= 0) return 0;
-
     // Map ray $(\p{}, \w{})$ onto the raster grid
     Point3f pFocus = ray((lensRadius > 0 ? focalDistance : 1) / cosTheta);
     Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
@@ -255,6 +232,7 @@ void PerspectiveDistCamera::Pdf_We(const Ray &ray, Float *pdfPos,
     Transform c2w;
     CameraToWorld.Interpolate(ray.time, &c2w);
     Float cosTheta = Dot(ray.d, c2w(Vector3f(0, 0, 1)));
+    
     if (cosTheta <= 0) {
         *pdfPos = *pdfDir = 0;
         return;
@@ -275,7 +253,6 @@ void PerspectiveDistCamera::Pdf_We(const Ray &ray, Float *pdfPos,
     // Compute lens area of perspective camera
     Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
     *pdfPos = 1 / lensArea;
-    *pdfDir = 1 / (A * cosTheta * cosTheta * cosTheta);
 }
 
 Spectrum PerspectiveDistCamera::Sample_Wi(const Interaction &ref, const Point2f &u,
@@ -347,13 +324,20 @@ PerspectiveDistCamera *CreatePerspectiveDistCamera(const ParamSet &params,
             Error("\"screenwindow\" should have four values");
     }
     Float fov = params.FindOneFloat("fov", 90.);
-    Float fov = params.FindOnePoint3f("kc", Point3f([0.0f, 0.0f, 0.0f]));
     Float halffov = params.FindOneFloat("halffov", -1.f);
     if (halffov > 0.f)
         // hack for structure synth, which exports half of the full fov
         fov = 2.f * halffov;
+    
+    int kci;
+    const Float *kc_tmp = params.FindFloat("kc", &kci);
+    Float kc[10]={};
+    for (int ii = 0; ii<kci;) {
+        kc[ii] = kc_tmp[ii];
+        ii++;
+    }
     return new PerspectiveDistCamera(cam2world, screen, shutteropen, shutterclose,
-                                 lensradius, focaldistance, fov, kc, film, medium);
+                                 lensradius, focaldistance, kc, fov, film, medium);
 }
 
 }  // namespace pbrt
