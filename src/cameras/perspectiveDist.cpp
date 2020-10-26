@@ -38,7 +38,8 @@
 #include "sampling.h"
 #include "light.h"
 #include "stats.h"
-
+#include <vector>
+using namespace std;
 namespace pbrt {
 // Added by zhenyi: Simulation of lens distortion using polynomials
 // PerspectiveDistCamera Method Definitions
@@ -46,7 +47,7 @@ PerspectiveDistCamera::PerspectiveDistCamera(const AnimatedTransform &CameraToWo
                                              const Bounds2f &screenWindow,
                                              Float shutterOpen, Float shutterClose,
                                              Float lensRadius, Float focalDistance,
-                                             Float kc[],
+                                             vector<vector<float>> kc,
                                              Float fov, Film *film,
                                              const Medium *medium)
     : ProjectiveCamera(CameraToWorld, Perspective(fov, 1e-2f, 1000.f),
@@ -65,11 +66,10 @@ PerspectiveDistCamera::PerspectiveDistCamera(const AnimatedTransform &CameraToWo
     pMin /= pMin.z;
     pMax /= pMax.z;
     A = std::abs((pMax.x - pMin.x) * (pMax.y - pMin.y));
-    k0 = kc[0]; k1 = kc[1]; k2 = kc[2];
-    k3 = kc[3]; k4 = kc[4]; k5 = kc[5];
-    k6 = kc[6]; k7 = kc[7]; k8 = kc[8]; k9 = kc[9];
+    kc_tmp = kc;
+        
 }
-// return invert distortion factor
+// return inverse distortion factor
 Float applyDistortion(Float r, Float kc[]) {
     Float r2 = r * r;
     Float r4 = r2 * r2;
@@ -80,7 +80,7 @@ Float applyDistortion(Float r, Float kc[]) {
     return f_tmp/r;
 }
 
-//// return inverse distortion factor
+// return inverse distortion factor
 //Float invertDistortion(Float r_d, Float kc[]) {
 //
 //    int it = 0;
@@ -137,25 +137,30 @@ Float PerspectiveDistCamera::GenerateRayDifferential(const CameraSample &sample,
     // Compute raster and camera sample positions
     Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
     Point3f pCamera = RasterToCamera(pFilm);
+    Float w = ray->wavelength; // Save the wavelength information
     //--------------------------------------------------------------------------
-    // add inverser distortion --zhenyi
-    // the sample point is considered as the distorted point, we apply polynoimals to find
-    // the original sample point
+    // add distortion tmp --zhenyi
     Float x_d = pCamera.x/pCamera.z;
     Float y_d = pCamera.y/pCamera.z;
     float r_d = sqrt(x_d*x_d + y_d*y_d);
-    Float kc[10] = {k0, k1, k2, k3, k4, k5, k6, k7, k8, k9};
-    Float correction_factor = applyDistortion(r_d, kc);
+    // apply wavelength dependent distortion
+    int wavelength_index = (w-400)/10;
+    float kc_w[10] = {};
+    for (int ii = 0; ii < 10; ) {
+        kc_w[ii] = kc_tmp[wavelength_index][ii];
+        ii++;
+    }
+    
+    Float correction_factor = applyDistortion(r_d, kc_w);
     if (r_d == 0) {
         correction_factor=1;
     }
-    pCamera.x*=correction_factor;
-    pCamera.y*=correction_factor;
+    pCamera.x*=abs(correction_factor);
+    pCamera.y*=abs(correction_factor);
     Vector3f dir = Normalize(Vector3f(pCamera.x, pCamera.y, pCamera.z));
-    //---------------------------------------------------------------------------
-    Float w = ray->wavelength; // Save the wavelength information
     *ray = RayDifferential(Point3f(0, 0, 0), dir);
-    ray->wavelength = w; // Reassign
+    
+    //---------------------------------------------------------------------------
     // Modify ray for depth of field
     if (lensRadius > 0) {
         // Sample point on lens
@@ -196,6 +201,7 @@ Float PerspectiveDistCamera::GenerateRayDifferential(const CameraSample &sample,
     ray->medium = medium;
     *ray = CameraToWorld(*ray);
     ray->hasDifferentials = true;
+    ray->wavelength = w; // Reassign
     return 1;
 }
 
@@ -204,6 +210,7 @@ Spectrum PerspectiveDistCamera::We(const Ray &ray, Point2f *pRaster2) const {
     Transform c2w;
     CameraToWorld.Interpolate(ray.time, &c2w);
     Float cosTheta = Dot(ray.d, c2w(Vector3f(0, 0, 1)));
+  
     if (cosTheta <= 0) return 0;
     // Map ray $(\p{}, \w{})$ onto the raster grid
     Point3f pFocus = ray((lensRadius > 0 ? focalDistance : 1) / cosTheta);
@@ -223,6 +230,8 @@ Spectrum PerspectiveDistCamera::We(const Ray &ray, Point2f *pRaster2) const {
 
     // Return importance for point on image plane
     Float cos2Theta = cosTheta * cosTheta;
+//    Float r_ori2 =r_ori*r_ori;
+//    Float deriv =  kc[1] + 2*kc[2]*r_ori + 3*kc[3]*r_ori2 + 4*kc[4]*r_ori2*r_ori;
     return Spectrum(1 / (A * lensArea * cos2Theta * cos2Theta));
 }
 
@@ -324,18 +333,25 @@ PerspectiveDistCamera *CreatePerspectiveDistCamera(const ParamSet &params,
             Error("\"screenwindow\" should have four values");
     }
     Float fov = params.FindOneFloat("fov", 90.);
+//    Float fov = params.FindOnePoint3f("kc", Point3f([0.0f, 0.0f, 0.0f]));
     Float halffov = params.FindOneFloat("halffov", -1.f);
+    int kci;
+    const Float *kc_tmp = params.FindFloat("kc", &kci);
+//    std::vector<float> kc{0,1,2,3,4,5,6,7,8,9};
+    float num_wavelength = 31;
+    vector<vector <float>> kc(num_wavelength, std::vector<float>(10, 0));
+//    Float kc[10]={};
+    int nn = 0;
+    for (int ii = 0; ii<num_wavelength;) {
+        for (int jj = 0; jj< 10;) {
+            kc[ii][jj]=kc_tmp[nn];
+            jj++; nn++;
+        }
+        ii++;
+    }
     if (halffov > 0.f)
         // hack for structure synth, which exports half of the full fov
         fov = 2.f * halffov;
-    
-    int kci;
-    const Float *kc_tmp = params.FindFloat("kc", &kci);
-    Float kc[10]={};
-    for (int ii = 0; ii<kci;) {
-        kc[ii] = kc_tmp[ii];
-        ii++;
-    }
     return new PerspectiveDistCamera(cam2world, screen, shutteropen, shutterclose,
                                  lensradius, focaldistance, kc, fov, film, medium);
 }
